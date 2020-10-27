@@ -1,0 +1,309 @@
+							****************EMBEDDED LINUX******************
+
+Day 1: 27/10/2020
+______________________________________________________________________________________________________________________________________________________________
+
+Beagle Bone Black (BBB) Configuration
+OS: Debian(available in 4Gb eMMC) |Anstrong (Light version available in 2Gb eMMC)
+Board revision : A6
+Serial Debug Cable - TTL (Transistors Transistors Logic)convertor
+5V@2A DC Power Supply
+
+LINK - https://beagleboard.org/black
+
+1. Processor: AM335x 1GHz ARM® Cortex-A8(Architecture)
+	(Vendor) Board Designers : Circuit IO and called this board as beaglebone black
+	Architect : ARM Cortex-A8
+	SOC (System on Chip): TI's Texsas (AM335x|OMAP)
+	
+	SOC - All the peripherals(or whole system) and its drives/controllers are embedded into a single chip.
+	
+2. RAM: 512MB DDR3 RAM   (DDR3 - D2516EC4BXGGB By kingston)
+DRAM Chip DDR3L SDRAM 4Gbit 256Mx16 1.35V 96-Pin FBGA
+
+3. Storage: 4GB 8-bit eMMC (embedded Multi-Media Controller) on-board flash storage.
+4. 3D graphics accelerator
+5. NEON floating-point accelerator
+6. 2x PRU 32-bit microcontrollers
+
+7.Software Compatibility
+	Debian,Android,Ubuntu,Cloud9 IDE on Node.js w/ BoneScript library
+	
+______________________________________________________________________________________________________________________________________________________________
+
+
+		Application layer
+	    -------------------------------
+	       Middle ware  (Userdefined API)
+	    -------------------------------
+		OS + Drivers (Drivers:Pointers,Structures....)
+	    --------------------------------
+	    	Hardware
+
+
+	
+______________________________________________________________________________________________________________________________________________________________
+
+
+
+
+		OS 	    + 		Drivers
+	(Kernel Drivers)		    (User Defined Drivers)
+	
+   Responsible for scheduling
+     of tasks.
+     
+     
+______________________________________________________________________________________________________________________________________________________________
+
+
+
+My Board configuration:
+
+
+	Reset : S1
+	S2 Button (Reboot): S2
+	Power : S3
+	
+	Part number of SOC : U5  (Processor : XAM3359AZCZI00)
+	
+	eMMC : U13
+	
+	DDR3 RAM : U12  (512 MB)   (DDR3 - D2516EC4BXGGB By kingston)
+	
+	UART : J1	
+	
+	4 User LED's: D2,D3,D4,D5
+	
+	Memory card: P10
+	
+	
+	
+	Power through Mini USB port : (5mA) P4
+	
+	Power: 5v fixed @2A(max 2A)
+	
+	
+	USB to TTL convertor 
+		Red - +5v
+		Black - Ground
+		White - Rx
+		Green - Tx
+		
+	UART - Cross connections in the board
+		.  .  .  .  .  .
+		  Tx  Rx       Gnd
+		White : TX
+		Green Rx
+______________________________________________________________________________________________________________________________________________________________
+
+	Install : sudo apt-get install minicom
+	**********************  Setting up Minicom  *******************************************
+		step 1: sudo minicom -s
+		step 2: serial port setup
+			(know the TTL cable name)
+			
+			(In other terminal)
+		step 3: dmesg (Search for Prolific Technology) port ttyUSB0
+		step 4: Press a and enter /dev/ttyUSB0
+		step 5: Press e check for Standard Bod rate : 115200 8N1
+						8 bit
+						N no parity
+						1 stop bit
+						
+		step 6: Press f, Check for Hardware flow control set it to NO
+		step 7: Press g, Check for software flow control set it to NO
+		step 8: Save the settings as dfl (default)
+		step 9: exit
+		step 10: connect usb 
+		
+			ANGSTROM
+		step 11: beaglebone login: root
+			  root@beaglebone:~#
+		step 12: shutdownnow
+			  
+			  
+			  
+		Boot Process
+			Welcome to minicom
+			...	      |
+			...	       |
+			...		| ----> Booting process, Drivers initialization (Kernel) need to be learnt	
+			...	       |
+			...	      |
+			Angstrom login
+	
+	
+_______________________________________________________________________________________________________________________________________________________________
+
+	**************FUNCTIONAL DAIGRAM of SOC*********************
+	
+	  ARM cortex Processor (3359)
+		- 32kb , 32kb L1 cache memory in ARM cortex-A8 1GHz
+		- 256kb L2 cache memory 
+		- 176kb ROM 
+		- 64kb RAM 
+	Graphics
+		- 64kb shared RAM
+	Display
+		24-bit LCD controller
+		Touch screen controller
+		
+             ____________________________
+		L3 and L4 interconnect   (L3 - high bus system / high Transaction can be handled   L4 - low bus system / low transactions(like peripherals) )
+             ____________________________
+		
+		
+	Serial Interface
+		- UART x6
+		- SPI x2
+		- CAN x2
+	System Interface
+		- eDMA
+		- Timers x8
+		- WDT
+		- RTC (real time clock)
+		- 24Mhz crystal Oscillator x2
+			BBB has Phase lock loop (PLL) which enhanes oscillator speed upto 1Ghz)
+	Paralle Interface
+		- MMC
+		- SD
+		- SDIO x3
+		- GPIO
+	Memory Interface
+		- mDDR
+		- DDR2
+		- DDR3
+		- NAND NOR(6 bit ECC)
+	
+_______________________________________________________________________________________________________________________________________________________________
+
+		MMC - Memory management Controller
+		
+	- MMC0 and MMC1 are the interfaces
+	- These are parallel Transaction
+	- Max 8bits Transaction can happen between MMC0 and MMC1
+	- Shift from MMC0 and MMC1 is allowed using S2
+	
+	- MMC0 is connected to Micro SD card P10(by Mouser)
+	- MMC1 is connected to U13 i.e., eMMC card on board (by Kingston NAND base)
+	
+
+Sematic documents include
+TRM - Technical Requirements Documents focuses on SOC
+_______________________________________________________________________________________________________________________________________________________________
+
+				BOOTING PROCESSS (Generic for all Linux booting boards)
+				
+		Boot loader
+			RBL - RBL's address is set into Reset button which is config by vendor
+			      RBL is written in the ROM of SOC
+			      Its a simple c language code
+			SPL/MLO
+			U-Boot
+		Kernel
+		User
+				
+				
+		BeagleBone Board Boot Options
+		1. NAND Flash
+		2. NOR Flash
+		3. USB
+		4. eMMC
+		5. SD Card
+		6. Ethernet
+		7. UART
+		7. SPI (Master Slave Protocol)
+		
+		
+		
+		3 Stages in BOOTING PROCESS
+		
+		1st Stage : RBL(ROM Bootloader)
+		2nd Stage : SPL/ MLO
+		3rd Stage : U-Boot (Hands over to kernel)
+		
+		RBL  --->   SPL/MLO  --->  U-Boot  --->  Linux Kernel
+							       |
+							     RFS
+		
+		1st Stage
+		RBL:
+			- Circuit Io is designer of the SOC
+			- By default booting is done from eMMC (MMC1) and it is done by RBL
+			- If no S2 is press then MMC1 if S2 is pressed  boots from MMC0 
+			- It also decides from where to load the OS
+			- Booting is handed over from 1st to 2nd Stage as it is designed by Circuit IO.
+			- Fixed by the vendor
+			
+			
+			stack setup <==> Initialzation of Interupts
+			main()  <==>  Watch Dok Timer WDT starts (If WDT crosses more than 3minutes then it starts from first - (in BBB))
+			DPLL's <==> sets all clock config and hands over to 2nd Stage Boot loader.
+				Clock config refere page 4102 in TRM.pdf
+			
+			[refer ppt 39 slide]
+						
+			
+		2nd Stage
+		SPL/MLO:
+			- Assume eMMC is the location from which OS to be loaded
+			- SPL starts searching for Booting images in the eMMC code (booting images -> converting .c .h to image files)
+			- It searches for U-Boot image
+			- It just Points to address of image from here it has to boot as it is huge file.
+			- Zee image is appended by adress of image is known MLO
+			- No addresses is appended only zee image is present is Known as SPL
+			
+			[refer ppt 40 slide]
+				Reconfigure - Rechecking
+				Since SOC SRAM(128kb) is not sufficient to load the image it allows to use DDR memory
+				and it performs all sort of muxing
+				copies Uboot image into DDR and handle over the control to it
+			
+			
+		3rd Stage
+		U-Boot
+			
+		Linux Kernel
+			- It initializes the Kernel thread
+			- RFS looks for the first application like Login&Pwd to be loaded
+		
+		
+_______________________________________________________________________________________________________________________________________________________________
+
+				
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+TODO:
+Shadow Project Boards: iMX7 Board from NXP |  Dragon Board
+SYSBOOT in sematic of BBB
+DDR1, DDR2, DDR3
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
