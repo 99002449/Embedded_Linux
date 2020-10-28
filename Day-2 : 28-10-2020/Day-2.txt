@@ -1,0 +1,121 @@
+					************************ DAY 2 : 28-10-2020  **********************************
+
+
+Making SD Card Bootable:
+_______________________________________________________________________________________________________________________________________________________________
+
+	Step 1: Update Linux:				
+			- sudo apt update
+			- sudo apt upgrade
+
+	Step 2: Install GParted
+			- sudo apt-get install gparted
+			
+	Step 3: Making partition in the SD Card
+		check SD card name in the terminal using - dmesg   (Sdb)
+		
+		
+	Step 4: Select SD card name (Sdb) in the gparted application (Top right corner)
+		Delete all the folders in the SD card and make it unallocated area
+		Right click on unallocated area and select new option
+		
+	Step 5: TODO: What are FAT NTFS File system
+		Select File System and select FAT 16 (4gb for 16gb card | 2gb for 8gb)
+		In the Label area name it as BOOT
+		Click on Add
+	
+	Step 6: Right Click on unallocated area and select new 
+		Select File System and select ext3 (It takes the remaining memory of SD card )
+		In the Label area name it as ROOTFS
+		Click on Add
+		
+		Now the SD card has been divided into two parts
+		(fat16) BOOT	(4gb)
+		(ext3)  ROOTFS  (11gb)
+		
+	Step 7: After partition Format it (Select tick mark in the menu bar).
+		Right click on BOOT partition and Select Managed Flags
+		Select option BOOT
+		
+	Step 8: In the File Manager check whether the SD card is partitioned into BOOT and ROOTFS
+		Note down the location of BOOT (eg. usr/admin/....)
+		Copy and paste the MLO file in the BOOT partition of SD Card
+		Eject the SD card and mount it in the BBB board
+	
+	Step 9: Open terminal type Sudo minicom
+		Connect serial port 
+		While Pressing the S2 (Boot button on BBB) give power supply to BBB using micro USB cable
+			
+		  In the Terminal Below message appears:
+		  
+			U-Boot SPL 2017.05-rc2 (May .............)
+			Trying to boot from MMC1
+			*** Warning bad CRC, using default environment  (it means it didnt boot from eMMC)
+			
+			reading u-boot.img
+			spl_load_image_fat: error reading iage u-boot.img err --1
+			*** Warning bad CRC, using default environment
+			
+			Failed to mount ext2 filesystem.......
+			spl_load_image_ext: ext4fs mount err - 0
+			
+	Step 10: Now copy U-Boot.img and paste it into the BOOT partition of SD Card
+		 Insert the card into BBB 
+		 
+		 ...
+		 ...	
+		 reading u-boot.img
+		 reading u-boot.img
+		 
+		 U-Boot 2013.04-dirty (jun .......)
+		 
+		 MMC: OMAP SD/MMC
+		 *** Warning - readenv() failed default environment
+		 ...
+		 ...
+		 
+		IMPORTANT NOTE:
+		* RBL in SOC from where to Boot and clock configuration
+		* SPL/MLO looks for U-boot image and reconfiguration of clock and  muxing i.e.,SPL looks for environment file
+			In the second phase itself, Depending on the protocol like (UART/ethernet etc..) gpio pins are set up.
+		* U-boot image always looks for UImage which is a binary image of Linux os/Kernel
+			(Uimage is always placed in ROOTFS/boot/uImage in SD card)
+			(uEnv.txt file gives the location of uimage)
+			Uimage consists of zimage + address(64 bits)
+		*uEnv.txt 
+			- It sets the behavior of booting process 
+			- It consists of Commands and environment variable(predefined|customized)
+			- In one environment variable we can run multiple commands
+			
+		Kernel - Drivers which consists of peripherals such as clock,scheduling,timing,gpios etc..
+	
+	Step 11: Copy and paste the uEnv.txt file in the BOOT partition
+		 Move to the path of Angstrom and Open Terminal for ROOTFS (as it cannot be copied directly use commands)
+		 	- sudo cp -r * /media/admin/...(path of ROOTFS)
+		 	- to check use "sync"
+		 	
+	Step 12: Press Space bar while booting to enter into U-boot area
+		 - load mmc 0:2 0x82000000 /boot/uImage
+		    8645240 bytes read in 
+		 - md 0x82000000 4 (md is used for reading) (It is written in the form of little Endian i.e., 82360598 then read like 98 05 36 82)
+		 - iminfo 0x82000000
+
+
+________________________________________________________________________________________________________________________________________________________________
+
+WORKING:
+	1st Stage : Selecting the boot option (SD card) Before supplying power to BBB press S2
+	2nd Stage : Take the MLO file and copy in the SD card's BOOT partitioned
+
+		
+TODO:
+What are FAT NTFS File system	
+Device Tree Binary File (DTB)
+uEnv.txt (Environmental Text File)
+uImage (This will always look into the u-boot.img)
+u-boot.img
+
+
+ping 192.167.7.1
+ping 8.8.8.8
+		
