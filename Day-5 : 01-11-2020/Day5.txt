@@ -1,0 +1,87 @@
+				Blinking of LED / Working with peripherals of BBB
+Two Data Sheets
+1. For BBB connections
+2. For SOC 
+
+Page 4057 in TRM for GPIO
+	GPIO Pins - 32 for each module
+	BBB has 4 module of GPIO
+	32*4 = 128 pins of GPIO available in BBB 
+	
+	
+Page70 in BBB_SRM for Expansion headers pin configuration
+	In Mode7
+	gpio_moduleNumber[Pin_number]
+	Eg: gpio2[6]  - gpio module 2 pin 6
+	    gpio1[3]  - gpio module 1 pin 3
+	module numbers are - 0 1 2 3
+Pgae15 in AM335x Sotata processors for soc pin configurarition
+	18*6 =324 pins in soc
+
+
+Login into Kernel 
+Angstrom
+Step 1: cd /sys/class/gpio# ls
+Step 2: gpio1[6] ==> 1 x 32  + 6 = GPIO38
+	 gpio[26] ==> 0 x 32 + 26 = GPIO26
+	 gpio2[4] ==> 2 x 32  + 4 = GPIO68
+	 
+	 For changing modes 0-7 in page 70 of BBB_SRM
+	 Page 758 in TRM
+	 	conf_gpmc_ad0 = 800h(offset address)
+	 Page 158 in TRM to get base adress of control module
+	 	Base Address of controll mod = 0x44E10000 
+	 	
+	 	Now Address of conf_gpmc_ad0 = 0x44E10000 + 800 = 0x44E10800
+	 	
+	 Cross checking the same above address in BBB
+	 /sys #: cd kernel
+	 /sys/kernel #: cd debug/
+	 /sys/kernel/debug #: cd pinctrl/
+	 /sys/kernel/debug/pinctrl #: ls
+	 				0x44e10800 .......
+	 				
+	 cat pi
+	 registereed pins: 142
+	 pin 0 (PIN0) 44e10800 00000031 pinctrl-single
+	 Page 815 in TRM 
+	 	take last 3 bits of last digit of 31(031 i.e, 1 -> 001) equivalent to MODE0 in page70 of BBB_SRM
+	 	
+	 	
+	 	
+	 	
+	 	
+	 Blinking LED
+	 cd /sys
+	 cd class/leds
+	 ls - goto 1st one
+	 cat trigger
+	 echo "none">trigger
+	 echo "hearbeat">trigger
+	 echo "timer">trigger
+	 
+	 Reference:
+	 	https://elinux.org/Category:EmbeddedBeagleClass
+	 excerise 10
+	 
+	 
+	 	 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TODO:
+Working of Compiler
+Static & Dynamic Library

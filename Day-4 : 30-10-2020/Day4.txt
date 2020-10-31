@@ -1,0 +1,278 @@
+							DAY 4 : 30-10-2020
+__________________________________________________________________________________________________________________________________________________
+
+SYSBOOT 4:0
+
+	S2 not Pressed			S2 Pressed
+	1. MMC1			1. SPI0
+	2. MMC0			2. MMC0
+	3. UART0			3. USB0
+	4. USB0			4. UART0
+	
+Time for Booting process If only TTL cable is attached is 4.5 minutes  (Refer Page No.4147  In TRM)
+Or else apply adapter for immediate
+ 
+UART Boot Procedure
+	 Device Initialization
+	 
+	• UART boot uses UART0.
+	• UART0 is configured to run at 115200 baud, 8-bits, no parity, 1 stop bit and no flow control.
+	
+	
+	Boot Image Download
+	
+	• UART boot uses x-modem(recommended) client protocol to receive the boot image.(Even Ymodem can be used but has diff procedure)	
+	• Utilities like hyperterm, teraterm, minicom can be used on the PC side to download the boot image to
+	the board
+	• With x-modem packet size of 1K throughout is roughly about 4KBytes/Sec.
+	• The ROM code will ping the host 10 times in 3s to start x-modem transfer. If host does not respond,
+	UART boot will timeout.
+	• Once the transfer has started, if the host does not send any packet for 3s, UART boot will time out
+	• If the delay between two consecutive bytes of the same packet is more than 2ms, the host is
+	requested to re-transmit the entire packet again
+	• Error checking using the CRC-16 support in x-modem. If an error is detected, the host is requested to
+	re-transmit the packet again.
+
+
+
+	Connect BBB using only TTl cable goto terminal sudo minicom and apply power button while pressing s2 (no sd card no usb )
+Step 1: Ctrl + A S and select xmodem
+Step 2: Select u-boot-spl.bin (Images of TI)(2nd Stage Bootloader)  Do it in 3 sec
+Step 3: Ctrl + A S and select xmodem again
+Step 4: Select u-boot.img(3rd stage Bootloader)  Do it in 3 sec
+	(Both u-boot-spl.bin and u-boot.img from Hostmachine is loaded into DDR3 of BBB) 
+Step 5: Enter into U-Boot area (Press Space bar)
+	- loadx 0x82000000(enter)
+	- crtl + A S xmodem load uImage
+	
+	- loadx 0x88000000(enter)
+	- ctrl + A S xmodem load .dtb file
+	
+	- loadx 0x88080000(enter)
+	- crtl + A S xmodem load initramfs(ram based file system)
+	
+	- Time to boot
+   	   Set bootargs
+	- setenv bootargs console=ttyO0,115200 root=/dev/ram0 rw initrd=0x88080000
+	- printenv bootargs
+	
+	
+	- bootm 0x82000000 0x88080000 0x88000000
+	
+	- Boot is successful
+	
+________________________________________________________________________________________________________________________________________________
+			Installing cross compiler and creating our own file system
+
+Installing Cross Compilers
+	Step 1: Open https://releases.linaro.org/components/toolchain/gcc-linaro/latest-5/
+		 Download and Extract gcc-linaro-5.5-2017.10.tar.xz (5|6|7 any version)
+		or 
+		Download from Yammer 
+		https://lnttsgroup.sharepoint.com/sites/GEA/Global%20Engineering%20Academy/GEA%20Insights/Genesis/Shared%20Documents/Forms/AllItems.aspx?e=5%3A33d953e8f952449680542fc22683e6b0&at=9&FolderCTID=0x01200013E6D434CE1BA84A96C7E5E6BCEF208B&viewid=cc51c267%2D8a4d%2D4268%2Db332%2D67a53fd6dfde&id=%2Fsites%2FGEA%2FGlobal%20Engineering%20Academy%2FGEA%20Insights%2FGenesis%2FShared%20Documents%2FSubmission%2FBANGALORE%2F2009BLRMED01%2FCourse%20Material
+		
+	Step 2: Compiler also depends Hostmachine
+		There 2 kinds of compilers .hf (hardfloating)  .sf(softfloating)
+		
+	Step 3: Open Terminal 
+		- vi /home/user/.bashrc
+		- append to the end of file and add
+		  export PATH=/home/uadmin/Downloads/gcc-linaro-5.5.0-2017.10-x86_64_arm-linux-gnueabi/bin:$PATH
+		  	if softfloating gnueabi/bin
+		  	if hardfloating gnueabihf/bin	
+		  and Save & quit
+	 	- source /home/user/.bashrc
+	 	- run source command
+	 	  arm (couple of time tab button)
+	 	  if installed successfully then we get arm-linux-gnueabi-.... many files
+	 	
+
+				U-Boot Compilation
+		u-boot folder is donwloaded from FTP server
+	Step 1: cd /home/training/u-boot-2017.05-rc2
+	Step 2: ls
+		N folders exists like 
+		boards api u-boot(img) u-boot.bin fs cmd include 
+		
+	Step 3: cd boards		(Boards folder consists of all boards)
+	Step 4: cd ti
+	STep 5: ls .....am335x ...
+	Step 6: cd am335x
+	Step 7: ls ... board.c board.o buitl-in.o..
+	
+--------------------------------------------------------------------------------------------------------------------------------------------------
+
+				Boot Using UART
+		
+STEP 1: Download arm cross toolchain for your Host machine
+	Before any developer run following commands
+	sudo apt install build-essential
+	sudo apt install bison
+	sudo apt install flex
+	
+	https://releases.linaro.org/components/toolchain/binaries/latest-5/latest-5/arm-linux-gnueabihf/
+
+	and download the gcc-linaro-5.5.0-2017.10-x86_64_arm-linux-gnueabihf.tar.xz file  or any other version
+	
+		OR
+	Use files from Workspace gcc 5.5 or 5cc 7.5
+
+
+STEP 2: export  path of the cross compilation toolchain. 
+
+	export PATH=$PATH:/home/uadmin/Downloads/gcc-linaro-6.5.0-2018.12-x86_64_arm-linux-gnueabihf/bin
+
+	or 
+
+	export PATH=/home/uadmin/Downloads/gcc-linaro-5.5.0-2017.10-x86_64_arm-linux-gnueabi/bin:$PATH
+		
+		
+STEP 3 : Creating user defined u-boot.bin and u-boot-spl.bin (U Boot Compilation)
+
+	  Open link: ftp://ftp.denx.de/pub/u-boot/
+	  Download any latest version of uboot-rc2 (either with rc2 or with no rc)
+	  Open terminal in the downloaded folder u-boot-rc-2015..
+	  
+	  Check compiler either hf or sf
+	  	type $ arm (multiple tabs)
+	  
+	  IF HARDFLOATING COMPILER follow these steps:
+	  	3.1 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- distclean
+	  		NOTE: deletes all the previously compiled/generated object files.
+	  	3.2 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- am335x_boneblack_defconfig
+	  	3.3 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-  menuconfig
+			NOTE:
+			 * Run menuconfig, if you want to do any settings other than default configuration
+			 * Auto load time can be Changed
+			 * Dont change in spl/.config
+			 * '*' sign means everything will be executed during compilation time and maps it to memory
+			    m sign means it wont compile during compilation time
+			 * if any error: see logs and solve it accordingly like
+			 
+			 * install following commands
+			   $ sudo apt-get install libncurses5 libncurses5-dev
+			   $ sudo apt-get install -y u-boot-tools
+			   $ sudo apt install lzop
+
+		3.4 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4  // -j4(4 core machine)
+		
+	   IF SOFTFLOATING COMPILER follow these steps:
+		3.1 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- distclean
+			NOTE: deletes all the previously compiled/generated object files.
+	  	3.2 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- am335x_boneblack_defconfig
+	  	3.3 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi-  menuconfig
+			NOTE:
+			 * Run menuconfig, if you want to do any settings other than default configuration
+			 * Auto load time can be Changed
+			 * Dont change in spl/.config
+			 * '*' sign means everything will be executed during compilation time and maps it to memory
+			    m sign means it wont compile during compilation time
+			 * if any error: see logs and solve it accordingly like
+			 
+			 * install following commands
+			   $ sudo apt-get install libncurses5 libncurses5-dev
+			   $ sudo apt-get install -y u-boot-tools
+			   $ sudo apt install lzop
+
+		3.4 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- -j4  // -j4(4 core machine) 
+		
+
+STEP 4 : Creating user defined uImage (Linux Compilation)
+	  
+	  Compile the linux kernel to generate uImage (changes allowed are logs| config | logo | name can be changed here)
+	  Open link: https://github.com/beagleboard/linux 
+	  Donwload and open terminal in downloaded linux-4.14
+	  
+	  IF HARDFLOATING COMPILER follow these steps:
+	  	3.1 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- distclean
+	  	3.2 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- bb.org_defconfig
+	  	3.3 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- menuconfig
+	  	3.4 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- uImage dtbs LOADADDR=0x80008000 -j4
+	  		NOTE: 
+	  		    * Here we can change the address of loading uImage into DDR
+	  		    * On successfull uImage is generated successfully
+	  		    * It takes bit time at the end uImage config and address is displayed	  		
+	  	3.5 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4 modules
+	  	
+	  IF SOFTFLOATING COMPILER follow these steps:
+	  	3.1 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- distclean
+	  	3.2 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- bb.org_defconfig
+	  	3.3 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- menuconfig
+	  	3.4 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- uImage dtbs LOADADDR=0x80008000 -j4
+	  		NOTE: 
+	  		    * Here we can change the address of loading uImage into DDR
+	  		    * On successfull uImage is generated successfully
+	  		    * It takes bit time at the end uImage config and address is displayed
+	  	3.5 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- -j4 modules
+	  	
+	  	
+STEP 5 : Creating user defined ROOTFS 
+	  
+	  By now there are 3 ways of using ROOTFS 
+	  	1. Boot & ROOTFS (different folders)
+		2. Initramfs
+		3. Looking into ROOTFS - minimal rootfilesystem
+	  Download busybox https://busybox.net/
+	   -  goto Download Source
+	   -  Download any latest version
+	      (Recommended : busybox-1.26.0.tar.bz2  2016-12-20 02:02  2.0M  )
+	  
+	  Open terminal in the donwloaded folder busybox-1.26.0
+	  IF HARDFLOATING COMPILER follow these steps:	     
+		  5.1: make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- distclean
+		  5.2: make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- defconfig (Apply default configuration)
+		  5.3: make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- menuconfig
+		  	NOTE:
+		  	    * Busy box is also compiler working with ARM 
+		  	    * Busy box settings
+		  	    * Build BusyBox as a static binary (no shared libs)
+		  	    
+		  	    * Static library is linked to linker
+			      - Size increases in static library 
+			      
+			    * Dynamic libarary
+			      - printf - Dynamic lib (shared lib)
+			      - During run time compiler takes help of shared lib to generate the .exe hence it reduces compiler space)
+		
+			
+			    * Select/Enable Build BusyBox as a static binary (no shared libs)  
+		  5.4: make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- CONFIG_PREFIX=/Documents/RFSfolder install -j4			
+		       NOTE: CONFIG_PREFIX = <path for new folder where kernel files is to be created> 	
+		  5.5 Goto the new folder created of kernel files (RFSfolder)
+		      - It consists of 3 folders (bin,sbin,urs) and 1 file linuxrc)
+		      - open terminal here
+		      - make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=<path of the RFSFolder> modules_install
+		      - Now lib folder gets created into RFSfolder
+		  5.6 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi- CONFIG_PREFIX=<install_path> install
+		  
+	  Now these folders can be compressed to one image|binary|iso file (as in like initramfs.bin file)
+	  Use any online compression tools
+	  
+	  
+	  
+	  				**************EXECUTION STEPS*******************
+	  STEP 1: Connect BBB to host machine using TTL cable (Make sure no micro usb is connected and no SD card is been attached)
+	  STEP 2: $sudo minicom and Give the power supply while pressing the S2 button.(now boot sequence is SPIO,MMC0,USB0,UART)
+	  STEP 3: Now RBL step pings host machine cccccc(waiting for spl file)
+	  STEP 4: Ctrl+AS xmodem(recommended) goto the u-boot-2017.01rc2/spl folder and load u-boot-spl.bin file
+	  STEP 5: Ctrl+AS xmodem(recommended) goto the u-boot-2017.01rc2 and load u-boot.bin file
+	  STEP 6: Now we are in 3rd Stage of boot loader (i.e., u-boot area and press space bar)
+	  	  Type loadx add_address_of_STEP_3.4
+	  	  Ctrl+AS xmodem(recommended) goto the linux-4.14/arch/arm/boot and load uImage.bin file
+	  	  Type loadx someotheraddress(0x88080000)
+	  	  Crtl+AS xmodem(recommended) and load initramfs file 
+	  	  
+	  	  Kernel gets loaded successfully......................... :) :) 
+		  
+		  
+		  
+		
+		
+	
+	
+	
+	
+	
+
+
+	
